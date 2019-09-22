@@ -11,6 +11,7 @@ let boxSize = 29; // the size of each box
 let paddingV, paddingH;
 let path = []; // The road taken
 // visualizer variables
+let canvas;
 let started = false;
 let ended = false;
 let noSolution = false;
@@ -18,17 +19,16 @@ let current;
 let startButton;
 let startIsDragged = false;
 let destIsDragged = false;
-let startArrowImg;
 let resetButton;
 let resetAllButton;
+let wallCloseSpan;
+let pointCloseSpan;
+let wallModalClosed = false;
+let pointModalClosed = false;
 
-function preload() {
-    startArrowImg = loadImage('arrow.png');
-}
-  
 function setup() {
-    createCanvas(windowWidth, windowHeight / 1.3);
-    console.log('A*');
+    canvas = createCanvas(windowWidth, windowHeight / 1.3);
+    canvas.parent('#canvas');
   
     // Grid cell size
     rows = floor(width / boxSize);
@@ -168,7 +168,7 @@ function draw() {
     if (!noSolution) {
         noFill();
         stroke(color('#FFEF6C'));
-        strokeWeight(boxSize / 2);
+        strokeWeight(boxSize / 2.5);
         beginShape();
         for (let i = 0; i < path.length; i++) {
             vertex((path[i].row * boxSize) + (boxSize/2 + paddingH), (path[i].col * boxSize) + (boxSize/2 + paddingV));
@@ -178,14 +178,14 @@ function draw() {
     }
 
     /* draws the start and destination icons */
-    stroke(0); strokeWeight(1.75); fill(0, alpha=50);
+    stroke(0); strokeWeight(2); fill(0, alpha=50);
     triangle(
-        (startPos[0] * boxSize) + paddingH + boxSize/4, (startPos[1] * boxSize) + paddingV + boxSize/6,
-        (startPos[0] * boxSize) + paddingH + boxSize/4, (startPos[1] * boxSize) + paddingV + 5*boxSize/6,
+        (startPos[0] * boxSize) + paddingH + boxSize/4.5, (startPos[1] * boxSize) + paddingV + boxSize/6,
+        (startPos[0] * boxSize) + paddingH + boxSize/4.5, (startPos[1] * boxSize) + paddingV + 5*boxSize/6,
         (startPos[0] * boxSize) + paddingH + boxSize/1.2, (startPos[1] * boxSize) + paddingV + boxSize/2,
     );
     ellipse((endPos[0] * boxSize) + paddingH + boxSize/2, (endPos[1] * boxSize) + paddingV + boxSize/2, boxSize/1.3);
-    ellipse((endPos[0] * boxSize) + paddingH + boxSize/2, (endPos[1] * boxSize) + paddingV + boxSize/2, boxSize/2.4);
+    ellipse((endPos[0] * boxSize) + paddingH + boxSize/2, (endPos[1] * boxSize) + paddingV + boxSize/2, boxSize/3);
     strokeWeight(1); // revert stroke weight
 }
 
@@ -206,12 +206,33 @@ function heuristic(a, b) {
 
 /* functions for visualizer below */
 function objectInit() {
+    wallCloseSpan = select('#wall-close');
+    wallCloseSpan.mousePressed(wallClosePressed);
+    pointCloseSpan = select('#point-close');
+    pointCloseSpan.mousePressed(pointClosePressed)
+
     startButton = createButton('Start');
     startButton.mousePressed(startAlgo);
+    startButton.class('button');
+    startButton.parent('#navbar')
+
     resetButton = createButton('Reset');
     resetButton.mousePressed(reset);
-    resetAllButton = createButton('Reset All');
+    resetButton.class('button');
+    resetButton.parent('#navbar');
+
+    resetAllButton = createButton('Remove Walls');
     resetAllButton.mousePressed(resetAll);
+    resetAllButton.class('button');
+    resetAllButton.parent('#navbar');
+}
+function wallClosePressed() {
+    select('#wallModal').style('display', 'none');
+    wallModalClosed = true;
+}
+function pointClosePressed() {
+    select('#pointModal').style('display', 'none');
+    pointModalClosed = true;
 }
 function startAlgo() {
     started = true;
@@ -238,6 +259,8 @@ function resetAll() {
     }
 }
 function mousePressed() {
+    if (!wallModalClosed)
+        return;
     if (started || ended)
         return;
         
@@ -252,6 +275,8 @@ function mousePressed() {
     }
 }
 function mouseDragged() {
+    if (!wallModalClosed)
+        return;
     if (started || ended)
         return;
 
